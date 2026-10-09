@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сортер: Классификация математических игр</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+            padding: 20px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #3498db, #9b59b6, #e74c3c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 1.05em;
+        }
+
+        .instructions {
+            background: #fff;
+            border: 2px solid #e0e6ed;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1em;
+            line-height: 1.6;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .instructions .highlight { color: #9b59b6; font-weight: bold; }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            padding: 14px 24px;
+            border-radius: 30px;
+            border: 2px solid #e0e6ed;
+            background: #fff;
+            color: #2c3e50;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: #fff;
+            border-color: #3498db;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .progress-bar-container {
+            background: #fff;
+            border: 2px solid #e0e6ed;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .progress-info .counter {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .progress-info .score {
+            font-size: 1em;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #e0e6ed;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #9b59b6);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 800px) {
+            .game-layout { grid-template-columns: 1fr; }
+        }
+
+        .card-zone {
+            background: #fff;
+            border: 2px solid #e0e6ed;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .card-zone .zone-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #9b59b6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .current-card {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.12), rgba(52, 152, 219, 0.12));
+            border: 3px solid #9b59b6;
+            border-radius: 14px;
+            padding: 22px 25px;
+            font-size: 1.05em;
+            line-height: 1.7;
+            color: #2c3e50;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .current-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(155, 89, 182, 0.3);
+        }
+
+        .current-card.dragging {
+            cursor: grabbing;
+            transform: scale(1.03);
+            box-shadow: 0 12px 35px rgba(155, 89, 182, 0.4);
+            opacity: 0.9;
+        }
+
+        .current-card.selected {
+            border-color: #f39c12;
+            background: rgba(243, 156, 18, 0.15);
+            box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.3);
+        }
+
+        .current-card.correct {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.15);
+            animation: popIn 0.4s ease;
+        }
+
+        .current-card.wrong {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.15);
+            animation: shake 0.4s ease;
+        }
+
+        .card-items {
+            list-style: none;
+            padding: 0;
+        }
+
+        .card-items li {
+            padding: 6px 0 6px 22px;
+            position: relative;
+            font-size: 1em;
+        }
+
+        .card-items li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #9b59b6;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .empty-hint {
+            color: #95a5a6;
+            font-style: italic;
+            font-size: 1.1em;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        @keyframes fadeOut {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+
+        .tables-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tables-zone .zone-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .category-table {
+            background: #fff;
+            border: 2px dashed #d0d7de;
+            border-radius: 12px;
+            padding: 15px 18px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-table:hover:not(.matched):not(.removing) {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.04);
+        }
+
+        .category-table.drag-over {
+            border-color: #3498db;
+            border-style: solid;
+            background: rgba(52, 152, 219, 0.1);
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.25);
+        }
+
+        .category-table .table-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            flex-shrink: 0;
+            background: #f8f9fa;
+        }
+
+        .category-table .table-name {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.05em;
+            flex: 1;
+        }
+
+        .category-table.matched {
+            border-color: #27ae60;
+            border-style: solid;
+            background: rgba(39, 174, 96, 0.08);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .category-table.removing {
+            animation: fadeOut 0.5s ease forwards;
+            pointer-events: none;
+        }
+
+        .category-table.wrong-flash {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            animation: shake 0.4s ease;
+        }
+
+        .feedback {
+            text-align: center;
+            font-size: 1.15em;
+            font-weight: bold;
+            min-height: 40px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .feedback.success {
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.08);
+            animation: popIn 0.4s ease;
+        }
+
+        .feedback.error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.08);
+            animation: shake 0.4s ease;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-skip:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-reset:hover { transform: translateY(-2px); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .completion {
+            display: none;
+            background: #fff;
+            border: 3px solid #27ae60;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(39, 174, 96, 0.2);
+            animation: celebrate 0.8s ease;
+        }
+
+        .completion.show { display: block; }
+
+        .completion h2 {
+            color: #27ae60;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .completion .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .completion .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .completion .stat-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            top: -10px;
+            animation: confettiFall 3s ease-in forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 700px) {
+            h1 { font-size: 1.5em; }
+            .current-card { font-size: 0.95em; padding: 15px 18px; }
+            .category-table { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>&#x1F3B2; Сортер: Классификация математических игр</h1>
+        <p class="subtitle">Определи, к какой категории относятся игры на карточке</p>
+
+        <div class="instructions">
+            На карточке перечислены <span class="highlight">несколько игр</span>. Определи, к какой категории они относятся, и перетащи карточку к нужной табличке (или кликни по карточке, затем по табличке).<br>
+            <em>При ошибке можно попробовать ещё раз. Правильно сопоставленная табличка исчезает.</em>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" id="mode1" onclick="selectMode(1)">По дидактической цели</button>
+            <button class="mode-btn" id="mode2" onclick="selectMode(2)">По возрасту</button>
+            <button class="mode-btn" id="mode3" onclick="selectMode(3)">По этапу урока</button>
+        </div>
+
+        <div class="progress-bar-container">
+            <div class="progress-info">
+                <span class="counter" id="counter">Карточка 1 из 4</span>
+                <span class="score" id="score">&#x2705; 0 | &#x274C; 0</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="game-layout">
+            <div class="card-zone">
+                <div class="zone-title">&#x1F0CF; Карточка (перетащи к табличке)</div>
+                <div class="current-card" id="currentCard" draggable="true">
+                    <span class="empty-hint">Выбери режим классификации</span>
+                </div>
+            </div>
+
+            <div class="tables-zone">
+                <div class="zone-title">&#x1F4CB; Таблички-категории</div>
+                <div id="tablesContainer"></div>
+            </div>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+
+        <div class="btn-container">
+            <button class="btn btn-skip" id="btnSkip" onclick="skipCard()" disabled>&#x23ED; Пропустить</button>
+            <button class="btn btn-reset" onclick="resetGame()">&#x1F504; Начать заново</button>
+        </div>
+
+        <div class="completion" id="completion">
+            <h2>&#x1F389; Отлично!</h2>
+            <p>Ты завершил сортировку!</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" style="color:#27ae60;" id="finalCorrect">0</div>
+                    <div class="stat-label">Правильно</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color:#e74c3c;" id="finalWrong">0</div>
+                    <div class="stat-label">Ошибок</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color:#f39c12;" id="finalSkipped">0</div>
+                    <div class="stat-label">Пропущено</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <script>
+        const classifications = {
+            1: {
+                name: 'По дидактической цели',
+                icons: ['&#x1F4DA;', '&#x1F504;', '&#x1F9E9;', '&#x2705;'],
+                categories: [
+                    {
+                        name: 'Игры на изучение нового материала',
+                        items: ['проблемная игровая ситуация', 'математический квест', 'ролевая ситуация', 'исследовательская игра']
+                    },
+                    {
+                        name: 'Игры на закрепление',
+                        items: ['математическое лото', 'домино', '«Математический аукцион»', '«Исправь ошибку»', 'эстафета']
+                    },
+                    {
+                        name: 'Игры на систематизацию и обобщение',
+                        items: ['математический турнир', 'командный марафон', '«Своя игра»', 'квест по теме']
+                    },
+                    {
+                        name: 'Игры на контроль',
+                        items: ['индивидуальные игровые карточки', 'математический диктант с игровой механикой', 'цифровая викторина', 'игра с маршрутными листами']
+                    }
+                ]
+            },
+            2: {
+                name: 'По возрасту',
+                icons: ['&#x1F476;', '&#x1F9D2;', '&#x1F468;&#x200D;&#x1F393;', '&#x1F393;'],
+                categories: [
+                    {
+                        name: 'I\u2013IV классы',
+                        items: ['Дидактические игры', 'математическое лото', 'сюжетные игры', 'игровые упражнения']
+                    },
+                    {
+                        name: 'V\u2013VI классы',
+                        items: ['Эстафеты', 'командные игры', 'математические квесты', 'игры с карточками']
+                    },
+                    {
+                        name: 'VII\u2013IX классы',
+                        items: ['Квесты', 'турниры', 'логические игры', 'игры-соревнования', 'практические игровые ситуации']
+                    },
+                    {
+                        name: 'X\u2013XI классы',
+                        items: ['Деловые игры', 'математические дебаты', 'моделирование', 'исследовательские игровые задания']
+                    }
+                ]
+            },
+            3: {
+                name: 'По этапу урока',
+                icons: ['&#x1F3AF;', '&#x1F4A1;', '&#x1F50D;', '&#x1F4DD;', '&#x2705;', '&#x1F4AD;'],
+                categories: [
+                    {
+                        name: 'Мотивация и целеполагание',
+                        items: ['игровая проблемная ситуация', 'загадка', 'математический вызов']
+                    },
+                    {
+                        name: 'Актуализация',
+                        items: ['блиц-игра', 'математическая разминка', 'лото']
+                    },
+                    {
+                        name: 'Изучение нового материала',
+                        items: ['игровая модель ситуации', 'исследовательская игра']
+                    },
+                    {
+                        name: 'Закрепление',
+                        items: ['эстафета', 'карточная игра', 'квест']
+                    },
+                    {
+                        name: 'Контроль',
+                        items: ['игровой тест', 'математический турнир']
+                    },
+                    {
+                        name: 'Рефлексия',
+                        items: ['«Лестница успеха»', '«Математический светофор»', 'рефлексивная карточка']
+                    }
+                ]
+            }
+        };
+
+        let currentMode = 1;
+        let cards = [];
+        let currentIndex = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let skippedCount = 0;
+        let isProcessing = false;
+        let selectedCard = null;
+        let matchedCategories = new Set(); // уже сопоставленные категории
+
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+                btn.classList.remove('active');
+                if (i + 1 === mode) btn.classList.add('active');
+            });
+            resetGame();
+        }
+
+        function init() {
+            const mode = classifications[currentMode];
+            cards = mode.categories.map((cat, i) => ({
+                name: cat.name,
+                items: cat.items,
+                categoryIndex: i,
+                placed: false
+            }));
+
+            cards = shuffleArray(cards);
+            currentIndex = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            skippedCount = 0;
+            isProcessing = false;
+            selectedCard = null;
+            matchedCategories.clear();
+
+            document.getElementById('completion').classList.remove('show');
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+
+            renderTables();
+            showCurrentCard();
+            updateProgress();
+        }
+
+        function renderTables() {
+            const container = document.getElementById('tablesContainer');
+            const mode = classifications[currentMode];
+            container.innerHTML = '';
+
+            mode.categories.forEach((cat, i) => {
+                const table = document.createElement('div');
+                table.className = 'category-table';
+                table.dataset.category = i;
+                table.id = `table-${i}`;
+                table.innerHTML = `
+                    <div class="table-icon">${mode.icons[i] || '&#x1F4CB;'}</div>
+                    <div class="table-name">${cat.name}</div>
+                `;
+
+                // Drag events — используем closest для надёжности
+                table.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (isProcessing || matchedCategories.has(i)) return;
+                    e.dataTransfer.dropEffect = 'move';
+                    table.classList.add('drag-over');
+                });
+
+                table.addEventListener('dragleave', (e) => {
+                    // Убираем подсветку только если уходим с самой таблички, а не с её детей
+                    if (!table.contains(e.relatedTarget)) {
+                        table.classList.remove('drag-over');
+                    }
+                });
+
+                table.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    table.classList.remove('drag-over');
+                    if (isProcessing || matchedCategories.has(i)) return;
+
+                    // Получаем индекс карточки из dataTransfer
+                    const cardIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    if (!isNaN(cardIdx) && cardIdx === currentIndex) {
+                        handleDrop(i);
+                    }
+                });
+
+                // Click event
+                table.addEventListener('click', () => {
+                    if (selectedCard !== null && !isProcessing && !matchedCategories.has(i)) {
+                        handleDrop(i);
+                    }
+                });
+
+                container.appendChild(table);
+            });
+        }
+
+        function showCurrentCard() {
+            const cardEl = document.getElementById('currentCard');
+            const btnSkip = document.getElementById('btnSkip');
+
+            // Проверяем, остались ли ещё карточки (не все ли категории закрыты)
+            const mode = classifications[currentMode];
+            const remainingCards = cards.filter(c => !c.placed);
+
+            if (remainingCards.length === 0 || currentIndex >= cards.length) {
+                cardEl.innerHTML = '<span class="empty-hint">&#x1F389; Все карточки распределены!</span>';
+                cardEl.className = 'current-card';
+                cardEl.draggable = false;
+                btnSkip.disabled = true;
+                showCompletion();
+                return;
+            }
+
+            // Пропускаем уже размещённые карточки
+            while (currentIndex < cards.length && cards[currentIndex].placed) {
+                currentIndex++;
+            }
+
+            if (currentIndex >= cards.length) {
+                cardEl.innerHTML = '<span class="empty-hint">&#x1F389; Все карточки распределены!</span>';
+                cardEl.className = 'current-card';
+                cardEl.draggable = false;
+                btnSkip.disabled = true;
+                showCompletion();
+                return;
+            }
+
+            const card = cards[currentIndex];
+            cardEl.className = 'current-card';
+            cardEl.draggable = true;
+            btnSkip.disabled = false;
+            selectedCard = null;
+
+            let itemsHtml = card.items.map(item => `<li>${item}</li>`).join('');
+            cardEl.innerHTML = `<ul class="card-items">${itemsHtml}</ul>`;
+
+            // Drag start — сохраняем индекс текущей карточки
+            cardEl.ondragstart = (e) => {
+                if (isProcessing) { e.preventDefault(); return; }
+                cardEl.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', String(currentIndex));
+            };
+
+            cardEl.ondragend = () => {
+                cardEl.classList.remove('dragging');
+            };
+
+            // Click to select
+            cardEl.onclick = () => {
+                if (isProcessing) return;
+                if (selectedCard === null) {
+                    selectedCard = currentIndex;
+                    cardEl.classList.add('selected');
+                } else {
+                    selectedCard = null;
+                    cardEl.classList.remove('selected');
+                }
+            };
+        }
+
+        function handleDrop(categoryIndex) {
+            if (isProcessing) return;
+            if (currentIndex >= cards.length) return;
+            if (matchedCategories.has(categoryIndex)) return;
+
+            const card = cards[currentIndex];
+            const cardEl = document.getElementById('currentCard');
+            const feedback = document.getElementById('feedback');
+            const tableEl = document.getElementById(`table-${categoryIndex}`);
+
+            if (card.categoryIndex === categoryIndex) {
+                // ПРАВИЛЬНО
+                correctCount++;
+                cardEl.classList.add('correct');
+                tableEl.classList.add('matched');
+
+                feedback.textContent = `\u2705 Правильно! Это категория «${card.name}»`;
+                feedback.className = 'feedback success';
+
+                card.placed = true;
+                matchedCategories.add(categoryIndex);
+
+                // Через небольшую задержку — убираем табличку и переходим к следующей карточке
+                setTimeout(() => {
+                    tableEl.classList.add('removing');
+                    setTimeout(() => {
+                        tableEl.style.display = 'none';
+                        currentIndex++;
+                        isProcessing = false;
+                        updateProgress();
+                        showCurrentCard();
+                    }, 500);
+                }, 800);
+
+            } else {
+                // НЕПРАВИЛЬНО — карточка остаётся, можно попробовать ещё раз
+                wrongCount++;
+                cardEl.classList.add('wrong');
+                tableEl.classList.add('wrong-flash');
+
+                feedback.textContent = `\u274C Неверно! Попробуй ещё раз.`;
+                feedback.className = 'feedback error';
+
+                setTimeout(() => {
+                    cardEl.classList.remove('wrong');
+                    tableEl.classList.remove('wrong-flash');
+                    isProcessing = false;
+                    updateProgress();
+                }, 1200);
+            }
+        }
+
+        function skipCard() {
+            if (isProcessing) return;
+            if (currentIndex >= cards.length) return;
+
+            skippedCount++;
+            const card = cards[currentIndex];
+            const feedback = document.getElementById('feedback');
+            const tableEl = document.getElementById(`table-${card.categoryIndex}`);
+
+            feedback.textContent = `\u23ED Пропущено. Правильная категория: «${card.name}»`;
+            feedback.className = 'feedback';
+
+            card.placed = true;
+            matchedCategories.add(card.categoryIndex);
+
+            if (tableEl) {
+                tableEl.classList.add('matched');
+                setTimeout(() => {
+                    tableEl.classList.add('removing');
+                    setTimeout(() => {
+                        tableEl.style.display = 'none';
+                    }, 500);
+                }, 500);
+            }
+
+            currentIndex++;
+            updateProgress();
+            showCurrentCard();
+        }
+
+        function updateProgress() {
+            const total = cards.length;
+            const placed = cards.filter(c => c.placed).length;
+            document.getElementById('counter').textContent = `Размещено ${placed} из ${total}`;
+            document.getElementById('score').textContent = `\u2705 ${correctCount} | \u274C ${wrongCount}`;
+            document.getElementById('progressFill').style.width = `${(placed / total) * 100}%`;
+        }
+
+        function showCompletion() {
+            document.getElementById('finalCorrect').textContent = correctCount;
+            document.getElementById('finalWrong').textContent = wrongCount;
+            document.getElementById('finalSkipped').textContent = skippedCount;
+            document.getElementById('completion').classList.add('show');
+
+            if (wrongCount === 0 && skippedCount === 0) {
+                launchConfetti();
+            }
+        }
+
+        function resetGame() {
+            init();
+        }
+
+        function launchConfetti() {
+            const container = document.getElementById('confettiContainer');
+            const colors = ['#3498db', '#9b59b6', '#27ae60', '#f39c12', '#e74c3c', '#1abc9c'];
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    const size = Math.random() * 10 + 5;
+                    confetti.style.width = size + 'px';
+                    confetti.style.height = size + 'px';
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    container.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 25);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
